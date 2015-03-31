@@ -74,7 +74,7 @@ public class PluginProxyKit implements IPluginProxyKit, TIntObjectProcedure<List
 //		ClassClassPath cp = new ClassClassPath(clazz);
 //		pool.insertClassPath(cp);
 		CtClass oldClass = pool.get(clazz.getName());
-		String proxyClassName = clazz.getName() + "$Proxy"+clazz.hashCode();
+		String proxyClassName = clazz.getName() + "$Proxy"+Integer.toHexString(loader.hashCode()).toUpperCase();
 		proxyClassName = proxyClassName.replace("-", "_");
 		CtClass newClass = null;
 		try{
