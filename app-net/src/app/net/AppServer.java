@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
 
+import app.core.AccessException;
 import app.core.Connection;
 import app.core.Connector;
 import app.core.Session;
@@ -25,12 +26,14 @@ public class AppServer extends DefaultConnector<Connection, Session> {
 
 	protected DefaultAppHandler handler;
 
-	private String hostname = "0.0.0.0";
-	private int port = 0;
+	protected String hostname = "0.0.0.0";
+	protected int port = 0;
 
 	private int executorPoolSize;
 	private int readerPoolSize;
 	private int writerPoolSize;
+
+	private ServerSocketChannel ssc;
 
 	@Override
 	public String toString() {
@@ -112,12 +115,11 @@ public class AppServer extends DefaultConnector<Connection, Session> {
 		if (port == 0)
 			return;
 		InetSocketAddress address = new InetSocketAddress(host, port);
-		ServerSocketChannel ssc = ServerSocketChannel.open();
+		ssc = ServerSocketChannel.open();
 		ssc.socket().setPerformancePreferences(0, 2, 1);
 		ssc.socket().setReceiveBufferSize(512);
 		ssc.socket().bind(address);
 		super.registor(ssc);
-		log.info(String.format("Listen(%s) %s", getName(), address));
 	}
 
 	public void setHostname(String hostname) {
@@ -161,21 +163,33 @@ public class AppServer extends DefaultConnector<Connection, Session> {
 	}
 
 	@Override
-	public void start() {
-		if (isRuning())
-			return;
-		
+	public void onStart() {
+		super.onStart();
 		this.executorService = newFixedThreadPool(this, "executor", executorPoolSize);
 		((DefaultMessageReader<Connection, Session>)this.reader).setExecutor(newFixedThreadPool(this, "reader", readerPoolSize));
 		((DefaultMessageWriter<Connection, Session>)this.writer).setExecutor(newFixedThreadPool(this, "writer", writerPoolSize));
-		
-		super.start();
-		if (isRuning())
+		try {
+			listen(hostname, port);
+		} catch (IOException e) {
+			throw new AccessException("listen "+hostname+":"+port,e);
+		}
+	}
+	@Override
+	protected void init() {
+		super.init();
+		log.info(String.format("Listen to %s:%d",  hostname, port));
+	}
+	@Override
+	protected void onStop() {
+		super.onStop();
+		if(ssc!=null){
 			try {
-				listen(hostname, port);
+				ssc.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			ssc =null;
+		}
 	}
 
 	public void start(String hostName, int port) throws IOException {

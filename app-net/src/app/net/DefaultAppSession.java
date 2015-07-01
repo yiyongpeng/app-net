@@ -347,7 +347,7 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 		if (s != null) {
 			response.setFuture(null);
 			if (!s.cancel(false)) {
-				System.err.println("Can't cancel the response timeout task.");
+//				System.err.println("cancel the response timeout task.");
 				return;
 			} else {
 				TimeoutTask t = (TimeoutTask) response.getTimeoutTask();
