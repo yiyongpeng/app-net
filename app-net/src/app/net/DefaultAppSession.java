@@ -253,8 +253,12 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 	@Override
 	public boolean send(int mid, ByteBuffer msg, AppCallResponse response,
 			boolean sync, long timeout) {
-		if (response.getTimeout() != 0)
+		if(getServerHandler()==null)
+			return false;
+		if (response.getTimeout() != 0){
 			timeout = response.getTimeout();
+			//System.err.println(this.getSessionId()+"  send for response-wait: "+timeout+", mid:"+mid);
+		}
 		int sendId = nextSendId();
 		if (sync) {
 			try {
@@ -264,17 +268,13 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 						if (send(mid, sendId, msg)) {
 							if (timeout == -1) {
 								// ========永久等待对方响应=======
-
 								lock.wait();
 								return true;
-
 							} else {
 								// ======按超时时间等待对方响应======
-
 								long time = System.nanoTime();
 								lock.wait(timeout);
 								time = System.nanoTime() - time;
-
 								if (time / 1000000 < timeout) {
 									if (respPool.containsKey(sendId) == false) {
 										return true;// 响应成功
@@ -307,7 +307,7 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 			}
 			unregistorSync(sendId);// 注销等待响应
 			throw new AccessException(getConnection()
-					+ " Response timeout, sendId: " + sendId);
+					+ ", Response timeout: "+timeout+", sendId: " + sendId);
 		} else {
 			registor(sendId, response);
 			if (timeout != -1) {
@@ -490,12 +490,12 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 
 	private AppSession parent;
 	private int respCount;
-	private long lastTime;
-	private Map<Object, AppCallResponse> respPool;
+	private volatile long lastTime;
+	private volatile Map<Object, AppCallResponse> respPool;
 
 	/* end members */
 
-	public static long DEFAULT_RECV_TIMEOUT = 10000L;
+	public static long DEFAULT_RECV_TIMEOUT = -1L;
 	public static long DEFAULT_KEEPLIVE_TIMEOUT = 1200000L;
 
 	private static final Logger log = Logger.getLogger(DefaultAppSession.class);

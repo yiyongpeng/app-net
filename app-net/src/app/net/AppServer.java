@@ -105,7 +105,7 @@ public class AppServer extends DefaultConnector<Connection, Session> {
 		registor((SelectableChannel) sc, conn);
 		for (int i = 0; i < 1000 && getHandle(sc) == null; i++)
 			try {
-				Thread.sleep(10);
+				Thread.sleep(300);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

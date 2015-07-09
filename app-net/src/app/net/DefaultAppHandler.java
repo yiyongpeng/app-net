@@ -17,6 +17,7 @@ import app.core.Session;
 import app.core.SessionFactory;
 import app.core.impl.DefaultConnection;
 import app.core.impl.DefaultServerHandler;
+import app.core.impl.DefaultSession;
 import app.filter.IAcceptFilter;
 import app.filter.IAcceptorFilter;
 import app.filter.IClosedFilter;
@@ -217,11 +218,12 @@ public class DefaultAppHandler extends DefaultServerHandler implements
 
 	@Override
 	protected void onSessionOpened(Session session) {
-		if (session instanceof DefaultAppSession) {
-			DefaultAppSession s = (DefaultAppSession) session;
-			s.init(this);
-			s.onAccpeted();
-		}
+		if (session instanceof DefaultAppSession)
+			synchronized (session) {
+				DefaultAppSession s = (DefaultAppSession) session;
+				s.init(this);
+				s.onAccpeted();
+			}
 		super.onSessionOpened(session);
 	}
 
@@ -443,6 +445,7 @@ public class DefaultAppHandler extends DefaultServerHandler implements
 				try {
 					log.debug("Session idle timeout : " + session);
 					removeSession(session.getSessionId());
+					((DefaultSession)session).destory();
 				} catch (Throwable e) {
 					getNotifier().fireOnError(session, e);
 				}
