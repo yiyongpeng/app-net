@@ -116,7 +116,7 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 		if (respPool == null)
 			return;
 		if (respPool.size() > 0) {
-			for (Entry<Object, AppCallResponse> entry : respPool.entrySet()) {
+			for (Entry<Integer, AppCallResponse> entry : respPool.entrySet()) {
 				AppCallResponse resp = entry.getValue();
 				synchronized (resp) {
 					log.debug(String.format(
@@ -168,7 +168,7 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 	}
 
 	private void registor(int mode, AppCallResponse response) {
-		getRespCallWaitingPool().put(mode, response);
+		respPool.put(mode, response);
 	}
 
 	private AppCallResponse unregistorSync(int mode) {
@@ -176,17 +176,9 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 	}
 
 	private AppCallResponse unregistor(int mode) {
-		return getRespCallWaitingPool().remove(mode);
+		return respPool.remove(mode);
 	}
 
-	private Map<Object, AppCallResponse> getRespCallWaitingPool() {
-		if (respPool == null)
-			synchronized (this) {
-				if (respPool == null)
-					respPool = new ConcurrentHashMap<Object, AppCallResponse>(8);
-			}
-		return respPool;
-	}
 
 	@Override
 	public void send(Object message) {
@@ -325,10 +317,10 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 	}
 
 	public synchronized int nextSendId() {
-		respCount++;
-		if (respCount == 0)
-			respCount = 1;
-		return respCount;
+		respIdNext++;
+		if (respIdNext == 0)
+			respIdNext = 1;
+		return respIdNext;
 	}
 
 	/**
@@ -489,9 +481,9 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 	/* begin members */
 
 	private AppSession parent;
-	private int respCount;
+	private int respIdNext;
 	private volatile long lastTime;
-	private volatile Map<Object, AppCallResponse> respPool;
+	private Map<Integer, AppCallResponse> respPool = new ConcurrentHashMap<Integer, AppCallResponse>(16);
 
 	/* end members */
 
