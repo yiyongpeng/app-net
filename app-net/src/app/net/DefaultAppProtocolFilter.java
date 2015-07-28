@@ -97,7 +97,6 @@ public class DefaultAppProtocolFilter extends FilterAdapter implements
 		boolean suc = false;
 		for (; in.remaining() >= 4
 				&& in.getInt(in.position()) <= in.remaining();) {
-
 			// 消息解包
 			int length = in.getInt();/* 消息长度 */
 			if (length > 4) {
@@ -113,14 +112,12 @@ public class DefaultAppProtocolFilter extends FilterAdapter implements
 						return true;
 				}
 			} else if (length == 4) {
-				suc = false;
 				if (ServerMode.isDebug())
 					log.debug(new StringBuilder(" << ping << ").append(conn));
 				onPing(conn);
 			} else {
 				// other protocol, go back
 				in.position(in.position() - 4);
-				suc = false;
 				break;
 			}
 		}
