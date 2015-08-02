@@ -7,6 +7,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 
@@ -316,11 +317,10 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 		}
 	}
 
-	public synchronized int nextSendId() {
-		respIdNext++;
-		if (respIdNext == 0)
-			respIdNext = 1;
-		return respIdNext;
+	public int nextSendId() {
+		int respId;
+		for(;(respId = respIdNext.incrementAndGet())==0;);
+		return respId;
 	}
 
 	/**
@@ -481,7 +481,7 @@ public class DefaultAppSession extends DefaultSession implements AppSession {
 	/* begin members */
 
 	private AppSession parent;
-	private int respIdNext;
+	private AtomicInteger respIdNext = new AtomicInteger();
 	private volatile long lastTime;
 	private Map<Integer, AppCallResponse> respPool = new ConcurrentHashMap<Integer, AppCallResponse>(16);
 
