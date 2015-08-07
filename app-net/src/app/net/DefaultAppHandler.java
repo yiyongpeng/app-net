@@ -175,7 +175,6 @@ public class DefaultAppHandler extends DefaultServerHandler implements
 				return conn;
 			}
 		}
-
 		Session session = null;
 		if (conn == null) {
 			conn = createConnection(socket);
@@ -184,10 +183,10 @@ public class DefaultAppHandler extends DefaultServerHandler implements
 		} else {
 			session = conn.getSession();
 		}
-
-		log.debug(new StringBuilder("Connected: ").append(session)
-				.append("  =>  ").append(getConnector()).toString());
-
+		if(log.isDebugEnabled()){
+			log.debug(new StringBuilder("Connected: ").append(session)
+					.append("  =>  ").append(getConnector()).toString());
+		}
 		return session.getConnection();
 	}
 
