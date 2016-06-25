@@ -37,8 +37,7 @@ public class AppServer extends DefaultConnector<Connection, Session> {
 
 	@Override
 	public String toString() {
-		return getPort() > 0 ? String.format("{%s  %s:%d}", getName(),
-				getHostname(), getPort()) : String.format("{ %s }", getName());
+		return getPort() > 0 ? String.format("{%s  %s:%d}", getName(), getHostname(), getPort()) : String.format("{ %s }", getName());
 	}
 
 	public AppServer() {
@@ -51,39 +50,36 @@ public class AppServer extends DefaultConnector<Connection, Session> {
 		this.notifier.addHandler(handler);
 	}
 
-	public AppServer(DefaultAppHandler handler, int executorPoolSize, int readerPoolSize, int writerPoolSize) throws IOException{
+	public AppServer(DefaultAppHandler handler, int executorPoolSize, int readerPoolSize, int writerPoolSize) throws IOException {
 		this(null, null, null);
 
 		setHandler(handler);
-		
+
 		this.executorPoolSize = executorPoolSize;
 		this.readerPoolSize = readerPoolSize;
 		this.writerPoolSize = writerPoolSize;
-		
+
 	}
-	
-	public AppServer(ExecutorService executor, Executor reader, Executor writer)
-			throws IOException {
-		super(executor, new DefaultNotifier<Connection, Session>(),
-				new DefaultMessageReader<Connection, Session>(reader),
-				new DefaultMessageWriter<Connection, Session>(writer));
+
+	public AppServer(ExecutorService executor, Executor reader, Executor writer) throws IOException {
+		super(executor, new DefaultNotifier<Connection, Session>(), new DefaultMessageReader<Connection, Session>(reader), new DefaultMessageWriter<Connection, Session>(writer));
 		this.handler = new DefaultAppHandler();
 		this.notifier = new DefaultNotifier<Connection, Session>();
 		this.notifier.addHandler(this.handler);
 	}
 
 	public ExecutorService newFixedThreadPool(final Connector<Connection, Session> connector, final String name, int size) {
-		if(size>0){
-			return Executors.newFixedThreadPool(size, new AppThreadFactory(){
+		if (size > 0) {
+			return Executors.newFixedThreadPool(size, new AppThreadFactory() {
 				public String getNamePrefix() {
-					return connector.getName()+"-"+name+"-";
+					return connector.getName() + "-" + name + "-";
 				}
 			});
-		}else{
+		} else {
 			return newCachedThreadPool(connector, name);
 		}
 	}
-	
+
 	public void setHandler(DefaultAppHandler handler) {
 		if (isRuning())
 			throw new IllegalStateException("The Server is Runing.");
@@ -166,29 +162,33 @@ public class AppServer extends DefaultConnector<Connection, Session> {
 	public void onStart() {
 		super.onStart();
 		this.executorService = newFixedThreadPool(this, "executor", executorPoolSize);
-		((DefaultMessageReader<Connection, Session>)this.reader).setExecutor(newFixedThreadPool(this, "reader", readerPoolSize));
-		((DefaultMessageWriter<Connection, Session>)this.writer).setExecutor(newFixedThreadPool(this, "writer", writerPoolSize));
+		((DefaultMessageReader<Connection, Session>) this.reader).setExecutor(newFixedThreadPool(this, "reader", readerPoolSize));
+		((DefaultMessageWriter<Connection, Session>) this.writer).setExecutor(newFixedThreadPool(this, "writer", writerPoolSize));
 		try {
 			listen(hostname, port);
 		} catch (IOException e) {
-			throw new AccessException("listen "+hostname+":"+port,e);
+			throw new AccessException("listen " + hostname + ":" + port, e);
 		}
 	}
+
 	@Override
 	protected void init() {
 		super.init();
-		log.info(String.format("Listen to %s:%d",  hostname, port));
+		if (port > 0) {
+			log.info(String.format("Listen to %s:%d", hostname, port));
+		}
 	}
+
 	@Override
 	protected void onStop() {
 		super.onStop();
-		if(ssc!=null){
+		if (ssc != null) {
 			try {
 				ssc.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			ssc =null;
+			ssc = null;
 		}
 	}
 
